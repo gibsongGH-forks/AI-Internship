@@ -2,6 +2,15 @@
 
 Build a typed LLM endpoint step by step. Each stage is a standalone FastAPI app you can run and compare.
 
+## Live deployment
+
+- **API:** https://ai-internship-jx6n.onrender.com (FastAPI, deployed on Render free tier — first request after idle time can take 10+ seconds to cold-start)
+- **Streamlit UI:** https://ai-internship-s7lvc6untbnbke3f8ughtk.streamlit.app/ (deployed on Streamlit Community Cloud, points at the Render API by default)
+
+## Model choice & cost
+
+`main.py` defaults to `gpt-4o` for answer quality on grounded RAG questions, with `gpt-4o-mini` and `o3-mini` available as per-request overrides (`model` field) when lower cost matters more than quality. Cost is computed per call from the real `prompt_tokens`/`completion_tokens` in the OpenAI response against list price per model (`MODEL_PRICES_PER_1K` in `main.py`), so `cost_usd` in every `/ask` response reflects the actual model used, not an estimate.
+
 ## Setup
 
 ```bash
@@ -37,7 +46,11 @@ Interactive UI for all five stages:
 streamlit run demo_page.py
 ```
 
-Open http://localhost:8501. Set **API base URL** to `http://127.0.0.1:8000` and start the matching stage server in another terminal.
+Open http://localhost:8501. Set **API base URL** to `http://127.0.0.1:8000` and start the matching stage server in another terminal — or just use the [live public UI](https://ai-internship-s7lvc6untbnbke3f8ughtk.streamlit.app/), which defaults to the deployed Render API and needs no local setup.
+
+## Guardrail proof (Stage 3)
+
+Demo 3 in the Streamlit UI has a `force_bad` checkbox. When checked, `/ask` deliberately asks the model for a malformed `Answer` (a string instead of a float for `confidence`) on the first attempt. `call_model_unsafe` validates that raw response with `Answer.model_validate_json(...)`; the resulting `pydantic.ValidationError` is caught in `ask()`'s retry loop, which falls back to the schema-enforced `call_model_structured` path (OpenAI structured outputs) and returns a clean, valid response — the malformed first attempt never reaches the client. Without this guardrail, the invalid response (a `confidence` field that fails the `Answer` schema) would either be returned to callers as-is or crash the endpoint with an unhandled exception.
 
 ## Test with curl
 
