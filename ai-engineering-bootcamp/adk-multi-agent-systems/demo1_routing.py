@@ -5,15 +5,18 @@ Run: python demo1_routing.py
 
 import asyncio
 import os
+import sys
 from dotenv import load_dotenv
 from google.adk.agents import Agent
 from google.adk.runners import Runner
 from google.adk.sessions import InMemorySessionService
 from google.genai import types
 
+sys.stdout.reconfigure(encoding="utf-8")
+
 load_dotenv()
 
-MODEL = "gemini-2.5-flash"
+MODEL = "gemini-flash-lite-latest"
 
 # --- Tools ---
 

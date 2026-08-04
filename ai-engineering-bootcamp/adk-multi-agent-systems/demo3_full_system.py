@@ -7,7 +7,10 @@ Then run:                     python demo3_full_system.py
 
 import asyncio
 import os
+import sys
 from dotenv import load_dotenv
+
+sys.stdout.reconfigure(encoding="utf-8")
 
 load_dotenv()
 
@@ -25,7 +28,7 @@ from google.adk.tools.mcp_tool import McpToolset, StdioConnectionParams
 from google.genai import types
 from mcp.client.stdio import StdioServerParameters
 
-MODEL = "gemini-2.5-flash"
+MODEL = "gemini-flash-lite-latest"
 
 # --- Layer 1: Technical Agent (local tools) ---
 

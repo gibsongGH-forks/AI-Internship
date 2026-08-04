@@ -8,6 +8,8 @@ import os
 import sys
 from dotenv import load_dotenv
 
+sys.stdout.reconfigure(encoding="utf-8")
+
 load_dotenv()
 
 from google.adk.agents import Agent
@@ -17,7 +19,7 @@ from google.adk.tools.mcp_tool import McpToolset, StdioConnectionParams
 from google.genai import types
 from mcp.client.stdio import StdioServerParameters
 
-MODEL = "gemini-2.5-flash"
+MODEL = "gemini-flash-lite-latest"
 TOKEN = os.getenv("SUPABASE_ACCESS_TOKEN", "")
 PROJECT_REF = os.getenv("SUPABASE_PROJECT_REF", "")
 

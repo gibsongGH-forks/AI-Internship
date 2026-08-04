@@ -28,7 +28,7 @@ from google.adk.runners import Runner
 from google.adk.sessions import InMemorySessionService
 from google.genai import types
 
-MODEL = "gemini-2.5-flash"
+MODEL = "gemini-flash-lite-latest"
 
 # --- Tools ---
 
