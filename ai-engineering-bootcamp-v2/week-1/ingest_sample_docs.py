@@ -26,7 +26,7 @@ def main() -> None:
     with httpx.Client(timeout=60.0) as client:
         for path in files:
             text = path.read_text(encoding="utf-8")
-            document_id = path.stem  # stable id derived from filename, e.g. doc1_handbook
+            document_id = path.stem  # stable id derived from filename, e.g. netflix_culture_memo
 
             response = client.post(
                 f"{base_url}/ingest",
