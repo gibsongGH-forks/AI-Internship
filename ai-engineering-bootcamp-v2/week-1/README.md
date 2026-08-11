@@ -80,6 +80,19 @@ curl -sS --max-time 60 -X POST https://ai-internship-jx6n.onrender.com/ask \
 streamlit run rag_ui.py
 ```
 
+## Durable memory (`/memory`)
+
+A small, gated key-value store for facts that should survive a process restart — separate from the Pinecone-backed document knowledge above. Backed by `memory_store.py` (one JSON file, `memory_store.json`, gitignored — runtime data, not source). Only three keys are ever accepted (`preferred_name`, `preferred_language`, `last_topic`, see `memory_store.ALLOWED_KEYS`); any other key gets a `400`. Built for the ADK capstone agent in `ai-engineering-bootcamp/adk-multi-agent-systems/demo5_agentic_memory.py` — see that folder's README for the full what/when/where/how/forget writeup.
+
+```bash
+curl -s -X POST http://127.0.0.1:8000/memory \
+  -H "Content-Type: application/json" \
+  -d '{"key": "preferred_name", "value": "Greg", "source": "user"}'
+
+curl -s http://127.0.0.1:8000/memory            # list everything stored
+curl -s http://127.0.0.1:8000/memory/preferred_name
+```
+
 ## Test with curl
 
 ```bash
@@ -111,6 +124,7 @@ week-1/
 ├── main.py              # Full system (stages 1–5 combined), RAG-backed /ask
 ├── serve_stage1.py … serve_stage5.py
 ├── vector_store.py      # Pinecone embed/upsert/query + health check
+├── memory_store.py      # Durable gated key-value store (/memory endpoints)
 ├── ingest_sample_docs.py  # Ingests week-2/sample_docs/*.txt via POST /ingest
 ├── demo_page.py         # Streamlit test UI (all five stages)
 ├── rag_ui.py            # Minimal Streamlit UI for /ingest + /ask

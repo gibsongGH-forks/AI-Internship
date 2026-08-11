@@ -1,6 +1,9 @@
 # Environment — never commit real keys
 .env
 
+# Durable memory store — user data generated at runtime, not source
+memory_store.json
+
 # Python
 __pycache__/
 *.py[cod]

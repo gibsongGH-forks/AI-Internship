@@ -10,6 +10,7 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from openai import OpenAI
 from pydantic import BaseModel, Field, ValidationError
 
+import memory_store
 import vector_store
 
 # Load .env from this folder so the key is found regardless of shell working directory.
@@ -302,3 +303,73 @@ def debug_pinecone() -> dict:
         return vector_store.pinecone_health()
     except Exception as exc:
         raise HTTPException(status_code=503, detail=f"Pinecone unreachable: {exc}")
+
+
+# --- Durable human memory (Session 5) ---
+#
+# Small, gated, cross-session store -- separate from the vector index above.
+# vector_store holds document knowledge (what the docs say); memory_store
+# holds a handful of stable facts about the user/session (what we know about
+# who's asking). See memory_store.py for the write gate and README.md for
+# the what/when/where/how/forget summary.
+
+class MemoryWriteRequest(BaseModel):
+    """Typed request body for persisting one durable fact."""
+
+    key: str
+    value: str
+    source: str = "agent"  # who/what asserted this fact, e.g. "agent" or "user"
+
+
+class MemoryEntry(BaseModel):
+    """One stored fact with its provenance."""
+
+    key: str
+    value: str
+    source: str
+    updated_at: str
+
+
+@app.post("/memory")
+def write_memory(body: MemoryWriteRequest) -> MemoryEntry:
+    """
+    Persist one durable fact. Only keys in memory_store.ALLOWED_KEYS are
+    accepted -- this is the write gate: stable, reusable facts only, never
+    task-local scratch or raw retrieved text.
+
+    curl -s -X POST http://127.0.0.1:8000/memory \
+      -H "Content-Type: application/json" \
+      -d '{"key": "preferred_name", "value": "Greg", "source": "user"}'
+    """
+
+    try:
+        entry = memory_store.replace(body.key, body.value, source=body.source)
+    except memory_store.MemoryWriteRejected as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    return MemoryEntry(key=body.key, **entry)
+
+
+@app.get("/memory")
+def list_memory() -> list[MemoryEntry]:
+    """
+    Return every durably-stored fact. This is what proves cross-session
+    recall: written by one process, read back here by a different one after
+    a restart, with nothing re-stated by the user.
+
+    curl -s http://127.0.0.1:8000/memory
+    """
+
+    return [MemoryEntry(key=key, **entry) for key, entry in memory_store.list_all().items()]
+
+
+@app.get("/memory/{key}")
+def read_memory(key: str) -> MemoryEntry:
+    """Return one stored fact by key, or 404 if it has never been set.
+
+    curl -s http://127.0.0.1:8000/memory/preferred_name
+    """
+
+    entry = memory_store.get(key)
+    if entry is None:
+        raise HTTPException(status_code=404, detail=f"No memory stored for key '{key}'")
+    return MemoryEntry(key=key, **entry)
